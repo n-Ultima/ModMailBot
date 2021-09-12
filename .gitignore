@@ -1,0 +1,5 @@
+.idea
+Modmail.Data/config.json
+bin
+obj
+Modmail.Data/Migrations/ModmailContextModelSnapshot.cs

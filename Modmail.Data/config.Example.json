@@ -1,0 +1,17 @@
+﻿{
+  "Prefix": "",
+  "Token": "",
+  "DbConnectionString": "",
+  "OwnerIds": [
+    533776358980059137
+  ],
+  "AllowMove": false,
+  "ReplyToTicketsWithoutCommand": false,
+  "NewTicketCreationMessage": "",
+  "MainServerId": ,
+  "InboxServerId": ,
+  "ModmailCategoryId": ,
+  "AdminRoleId": ,
+  "ModRoleId": ,
+  "LogChannelId": 
+}
