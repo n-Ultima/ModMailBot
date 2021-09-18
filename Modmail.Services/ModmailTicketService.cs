@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +62,16 @@ namespace Modmail.Services
             }
         }
 
+        public async Task<IEnumerable<ModmailMessage>> FetchModmailMessagesAsync(Guid ticketId)
+        {
+            using (var scope = ServiceProvider.CreateScope())
+            {
+                var modmailContext = scope.ServiceProvider.GetRequiredService<ModmailContext>();
+                return await modmailContext.ModmailMessages
+                    .Where(x => x.ModmailTicketId == ticketId)
+                    .ToListAsync();
+            }
+        }
         public async Task<ModmailTicket> FetchModmailTicketByModmailTicketChannelAsync(Snowflake channelId)
         {
             using (var scope = ServiceProvider.CreateScope())
@@ -68,6 +80,20 @@ namespace Modmail.Services
                 return await modmailContext.ModmailTickets
                     .Where(x => x.ModmailThreadChannelId == channelId)
                     .SingleOrDefaultAsync();
+            }
+        }
+
+        public async Task DeleteModmailTicketAsync(ModmailTicket modmailTicket)
+        {
+            using (var scope = ServiceProvider.CreateScope())
+            {
+                var modmailContext = scope.ServiceProvider.GetRequiredService<ModmailContext>();
+                var messsages = await modmailContext.ModmailMessages
+                    .Where(x => x.ModmailTicketId == modmailTicket.Id)
+                    .ToListAsync();
+                modmailContext.ModmailMessages. RemoveRange(messsages);
+                modmailContext.ModmailTickets.Remove(modmailTicket);
+                await modmailContext.SaveChangesAsync();
             }
         }
     }

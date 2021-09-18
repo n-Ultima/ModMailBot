@@ -28,8 +28,10 @@ namespace Modmail.Services.Responders
             _guildApi = guildApi;
             _modmailTicketService = modmailTicketService;
         }
+
         public async Task<Result> RespondAsync(IMessageCreate gatewayEvent, CancellationToken ct = new CancellationToken())
         {
+            var messageExtensions = new MessageExtensions(_channelApi);
             if (!gatewayEvent.GuildID.HasValue)
             {
                 return Result.FromSuccess();
@@ -99,6 +101,7 @@ namespace Modmail.Services.Responders
                 
                 await _channelApi.CreateMessageAsync(modmailTicket.DmChannelId, embeds: new[] {attachmentEmbed}, ct: ct);
                 await _modmailTicketService.AddMessageToModmailTicketAsync(modmailTicket.Id, gatewayEvent.ID, gatewayEvent.Author.ID, gatewayEvent.Content);
+                await messageExtensions.AddConfirmationAsync(gatewayEvent.ChannelID, gatewayEvent);
                 return Result.FromSuccess();
             }
 
@@ -112,6 +115,7 @@ namespace Modmail.Services.Responders
             };
             await _channelApi.CreateMessageAsync(modmailTicket.DmChannelId, embeds: new[] {embed}, ct: ct);
             await _modmailTicketService.AddMessageToModmailTicketAsync(modmailTicket.Id, gatewayEvent.ID, gatewayEvent.Author.ID, gatewayEvent.Content);
+            await messageExtensions.AddConfirmationAsync(gatewayEvent.ChannelID, gatewayEvent);
             return Result.FromSuccess();
         }
     }

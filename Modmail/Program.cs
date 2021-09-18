@@ -56,6 +56,7 @@ namespace Modmail
                         .AddModmailServices()
                         .AddDiscordCaching()
                         .AddPostExecutionEvent<PostExecutionEventHandler>()
+                        .AddPreExecutionEvent<PreExecutionEventHandler>()
                         .Configure<CommandResponderOptions>(x => x.Prefix = prefix)
                         .Configure<DiscordGatewayClientOptions>(x =>
                         {

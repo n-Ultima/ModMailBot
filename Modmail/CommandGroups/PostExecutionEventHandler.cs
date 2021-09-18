@@ -25,7 +25,11 @@ namespace Doraemon.CommandGroups
         {
             if (!commandResult.IsSuccess)
             {
-                Log.Logger.Error("An exception bubbled up for command {command}\nError:{error}", _messageContext.Message.Content, commandResult.Error.Message);
+                if (commandResult.Error.Message.Equals("User is blacklisted from using the bot.") || commandResult.Error.Message.Equals("Commands can only be ran in the guild."))
+                {
+                    return Result.FromSuccess();
+                }
+                Log.Logger.Error("An exception bubbled up for command {command}\nError:{error}", _messageContext.Message.Content, commandResult.Error);
                 await _channelApi.CreateReactionAsync(context.ChannelID, _messageContext.MessageID, "⚠", ct: ct);
                 await _channelApi.CreateMessageAsync(context.ChannelID, $"Error: {commandResult.Error?.Message}", ct: ct);
             }
