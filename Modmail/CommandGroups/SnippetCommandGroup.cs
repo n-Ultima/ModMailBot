@@ -17,33 +17,30 @@ using Remora.Results;
 
 namespace Doraemon.CommandGroups
 {
-    [Group("snippet")]
-    public class SnippetCommandGroup : CommandGroup
+    public class SnippetCommand : CommandGroup
     {
-        private readonly IDiscordRestChannelAPI _channelApi;
-        private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly SnippetService _snippetService;
-        private readonly UserService _userService;
         private readonly MessageContext _messageContext;
+        private readonly IDiscordRestGuildAPI _guildApi;
+        private readonly IDiscordRestChannelAPI _channelApi;
+        private readonly SnippetService _snippetService;
         private readonly ModmailTicketService _modmailTicketService;
-        public ModmailConfiguration ModmailConfig = new();
-        
-        public SnippetCommandGroup(IDiscordRestChannelAPI channelApi, IDiscordRestGuildAPI guildApi, SnippetService snippetService, UserService userService, ModmailTicketService modmailTicketService, MessageContext messageContext)
+
+        public SnippetCommand(MessageContext messageContext, IDiscordRestGuildAPI guildApi, IDiscordRestChannelAPI channelApi, SnippetService snippetService, ModmailTicketService modmailTicketService)
         {
-            _channelApi = channelApi;
-            _guildApi = guildApi;
-            _snippetService = snippetService;
-            _userService = userService;
-            _modmailTicketService = modmailTicketService;
             _messageContext = messageContext;
+            _guildApi = guildApi;
+            _channelApi = channelApi;
+            _snippetService = snippetService;
+            _modmailTicketService = modmailTicketService;
         }
 
-        [Command("")]
+        [Command("snippet")]
         [Description("Sends the snippet to the DM Channel, or previews it if not in a modmail channel.")]
         public async Task<Result> DisplaySnippetAsync(string snippetName)
         {
             var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
-            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Moderator))
+            var cmdGroup = new SnippetCommandGroup(_channelApi, _guildApi, _snippetService, _modmailTicketService, _messageContext);
+            if (!cmdGroup.TryAuthenticateUser(executor.Entity, PermissionLevel.Moderator))
             {
                 return Result.FromSuccess();
             }
@@ -88,7 +85,7 @@ namespace Doraemon.CommandGroups
             }
             var embed = new Embed
             {
-                Colour = Color.Green,
+                Colour = Color.LimeGreen,
                 Author = _messageContext.User.WithUserAsAuthor(),
                 Description = snippet.Content,
                 Timestamp = DateTimeOffset.UtcNow,
@@ -105,7 +102,54 @@ namespace Doraemon.CommandGroups
                 ? Result.FromSuccess()
                 : Result.FromError(successResult.Error);
         }
+    }
+    [Group("snippet")]
+    public class SnippetCommandGroup : CommandGroup
+    {
+        private readonly IDiscordRestChannelAPI _channelApi;
+        private readonly IDiscordRestGuildAPI _guildApi;
+        private readonly SnippetService _snippetService;
+        private readonly MessageContext _messageContext;
+        private readonly ModmailTicketService _modmailTicketService;
+        public ModmailConfiguration ModmailConfig = new();
+        
+        public SnippetCommandGroup(IDiscordRestChannelAPI channelApi, IDiscordRestGuildAPI guildApi, SnippetService snippetService, ModmailTicketService modmailTicketService, MessageContext messageContext)
+        {
+            _channelApi = channelApi;
+            _guildApi = guildApi;
+            _snippetService = snippetService;
+            _modmailTicketService = modmailTicketService;
+            _messageContext = messageContext;
+        }
 
+        [Command("preview")]
+        [Description("Previews a snippets content.")]
+        public async Task<Result> PreviewSnippetAsync(string snippetName)
+        {
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
+            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Moderator))
+            {
+                return Result.FromSuccess();
+            }
+            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value);
+            var snippet = await _snippetService.FetchSnippetAsync(snippetName);
+            if (snippet == null)
+            {
+                return Result.FromError(new ExceptionError(new Exception("The snippet provided was not found.")));
+            }
+
+            var embed = new Embed
+            {
+                Colour = Color.Red,
+                Title = $"Snippet {snippet.Name}'s Content:",
+                Description = $"```\n{snippet.Content}\n```"
+            };
+            var result = await _channelApi.CreateMessageAsync(_messageContext.ChannelID, embeds: new[] {embed}, ct: CancellationToken);
+            return result.IsSuccess
+                ? Result.FromSuccess()
+                : Result.FromError(result.Error);
+        }
         [Command("create", "add")]
         [Description("Creates a snippet for later use.")]
         public async Task<Result> CreateSnippetAsync(string snippetName, [Greedy] string snippetContent)
@@ -135,19 +179,57 @@ namespace Doraemon.CommandGroups
         [Description("Modifies an existing snippets content.")]
         public async Task<Result> EditSnippetAsync(string snippetName, [Greedy] string newContent)
         {
-            
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
+            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value);
+            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Administrator))
+            {
+                return Result.FromSuccess();
+            }
+
+            var snippet = await _snippetService.FetchSnippetAsync(snippetName);
+            if (snippet == null)
+            {
+                return Result.FromError(new ExceptionError(new Exception("The snippet provided was not found.")));
+            }
+
+            await _snippetService.EditSnippetAsync(snippet, newContent);
+            var result = await _channelApi.CreateMessageAsync(_messageContext.ChannelID, "Snippet successfully modified.", ct: CancellationToken);
+            return result.IsSuccess
+                ? Result.FromSuccess()
+                : Result.FromError(result.Error);
+        }
+
+        [Command("delete", "remove")]
+        [Description("Deletes a snippet.")]
+        public async Task<Result> DeleteSnippetAsync(string snippetName)
+        {
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
+            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value);
+            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Administrator))
+            {
+                return Result.FromSuccess();
+            }
+
+            var snippet = await _snippetService.FetchSnippetAsync(snippetName);
+            if (snippet == null)
+            {
+                return Result.FromError(new ExceptionError(new Exception("The snippet provided was not found.")));
+            }
+
+            await _snippetService.DeleteSnippetAsync(snippet);
+            var result = await _channelApi.CreateMessageAsync(_messageContext.ChannelID, "Snippet successfully deleted.", ct: CancellationToken);
+            return result.IsSuccess
+                ? Result.FromSuccess()
+                : Result.FromError(result.Error);
         }
         
-        private bool TryAuthenticateUser(IGuildMember member, PermissionLevel permissionLevel)
+        public bool TryAuthenticateUser(IGuildMember member, PermissionLevel permissionLevel)
         {
             if (member == null)
             {
                 throw new ArgumentNullException(nameof(member));
-            }
-
-            if (permissionLevel == null)
-            {
-                throw new ArgumentNullException(nameof(permissionLevel));
             }
             if (permissionLevel == PermissionLevel.Moderator)
             {

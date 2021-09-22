@@ -1,4 +1,5 @@
 ﻿{
+  // anything without quotes should not have a quoted value. For example, InboxServerId: 12324342343,
   "Prefix": "",
   "Token": "",
   "DbConnectionString": "",

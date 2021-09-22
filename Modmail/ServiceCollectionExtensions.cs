@@ -17,7 +17,10 @@ namespace Modmail
             collection
                 .AddCommandGroup<ConnectivityCommandGroup>()
                 .AddCommandGroup<HelpCommandGroup>()
-                .AddCommandGroup<ModmailCommandGroup>();
+                .AddCommandGroup<ModmailCommandGroup>()
+                .AddCommandGroup<SnippetCommandGroup>()
+                .AddCommandGroup<UserCommandGroup>()
+                .AddCommandGroup<SnippetCommand>();
             return collection;
         }
 
@@ -39,7 +42,8 @@ namespace Modmail
         {
             collection
                 .AddSingleton<UserService>()
-                .AddSingleton<ModmailTicketService>();
+                .AddSingleton<ModmailTicketService>()
+                .AddSingleton<SnippetService>();
             return collection;
         }
     }

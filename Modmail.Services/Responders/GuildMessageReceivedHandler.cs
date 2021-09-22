@@ -31,7 +31,6 @@ namespace Modmail.Services.Responders
 
         public async Task<Result> RespondAsync(IMessageCreate gatewayEvent, CancellationToken ct = new CancellationToken())
         {
-            var messageExtensions = new MessageExtensions(_channelApi);
             if (!gatewayEvent.GuildID.HasValue)
             {
                 return Result.FromSuccess();
@@ -91,7 +90,7 @@ namespace Modmail.Services.Responders
                 var attachment = gatewayEvent.Attachments[0];
                 var attachmentEmbed = new Embed
                 {
-                    Colour = Color.Green,
+                    Colour = Color.LimeGreen,
                     Author = gatewayEvent.Author.WithUserAsAuthor(),
                     Description = gatewayEvent.Content,
                     Timestamp = DateTimeOffset.UtcNow,
@@ -99,24 +98,36 @@ namespace Modmail.Services.Responders
                     Image = new EmbedImage(attachment.Url)
                 };
                 
-                await _channelApi.CreateMessageAsync(modmailTicket.DmChannelId, embeds: new[] {attachmentEmbed}, ct: ct);
+                var dmAttachmentResult = await _channelApi.CreateMessageAsync(modmailTicket.DmChannelId, embeds: new[] {attachmentEmbed}, ct: ct);
+                if (!dmAttachmentResult.IsSuccess)
+                {
+                    return Result.FromError(dmAttachmentResult.Error);
+                }
                 await _modmailTicketService.AddMessageToModmailTicketAsync(modmailTicket.Id, gatewayEvent.ID, gatewayEvent.Author.ID, gatewayEvent.Content);
-                await messageExtensions.AddConfirmationAsync(gatewayEvent.ChannelID, gatewayEvent);
-                return Result.FromSuccess();
+                var successAttachmentResult = await _channelApi.CreateMessageAsync(gatewayEvent.ChannelID, "Here's what was sent to the user:", embeds: new[] {attachmentEmbed}, ct: ct);
+                return successAttachmentResult.IsSuccess
+                    ? Result.FromSuccess()
+                    : Result.FromError(successAttachmentResult.Error);
             }
 
             var embed = new Embed
             {
-                Colour = Color.Green,
+                Colour = Color.LimeGreen,
                 Author = gatewayEvent.Author.WithUserAsAuthor(),
                 Description = gatewayEvent.Content,
                 Timestamp = DateTimeOffset.UtcNow,
                 Footer = new EmbedFooter(highestRoleName),
             };
-            await _channelApi.CreateMessageAsync(modmailTicket.DmChannelId, embeds: new[] {embed}, ct: ct);
+            var dmResult = await _channelApi.CreateMessageAsync(modmailTicket.DmChannelId, embeds: new[] {embed}, ct: ct);
+            if (!dmResult.IsSuccess)
+            {
+                return Result.FromError(dmResult.Error);
+            }
             await _modmailTicketService.AddMessageToModmailTicketAsync(modmailTicket.Id, gatewayEvent.ID, gatewayEvent.Author.ID, gatewayEvent.Content);
-            await messageExtensions.AddConfirmationAsync(gatewayEvent.ChannelID, gatewayEvent);
-            return Result.FromSuccess();
+            var successResult = await _channelApi.CreateMessageAsync(gatewayEvent.ChannelID, "Here's what was sent to the user:", embeds: new[] {embed}, ct: ct);
+            return successResult.IsSuccess
+                ? Result.FromSuccess()
+                : Result.FromError(successResult.Error);
         }
     }
 }

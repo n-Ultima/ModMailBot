@@ -51,7 +51,6 @@ namespace Modmail.Services.Responders
             {
                 return Result.FromSuccess();
             }
-            var messageExtensions = new MessageExtensions(_channelApi);
             var dmModmail = await _modmailTicketService.FetchModmailTicketAsync(gatewayEvent.Author.ID);
             if (dmModmail == null)
             {
@@ -83,7 +82,7 @@ namespace Modmail.Services.Responders
                 var newTicketEmbed = new Embed
                 {
                     Title = "New Modmail Thread",
-                    Colour = Color.Green,
+                    Colour = Color.LimeGreen,
                     Description = $"**{gatewayEvent.Author.Tag()}**(created at {gatewayEvent.Author.ID.Timestamp.ToString("d")}) has opened a modmail thread.",
                     Fields = new[]
                     {
@@ -94,7 +93,6 @@ namespace Modmail.Services.Responders
                 await _channelApi.CreateMessageAsync(createdModmailChannel.Entity.ID, embeds: new[] {newTicketEmbed, embed}, ct: ct);
                 await _modmailTicketService.CreateModmailTicketAsync(id, gatewayEvent.ChannelID, createdModmailChannel.Entity.ID, gatewayEvent.Author.ID);
                 await _modmailTicketService.AddMessageToModmailTicketAsync(id, gatewayEvent.ID, gatewayEvent.Author.ID, $"{gatewayEvent.Content}");
-                await messageExtensions.AddConfirmationAsync(gatewayEvent.ChannelID, gatewayEvent);
                 return Result.FromSuccess();
             }
 
@@ -125,7 +123,6 @@ namespace Modmail.Services.Responders
             };
             await _channelApi.CreateMessageAsync(dmModmail.ModmailThreadChannelId, embeds: new[] {continuedEmbed}, ct: ct);
             await _modmailTicketService.AddMessageToModmailTicketAsync(dmModmail.Id, gatewayEvent.ID, gatewayEvent.Author.ID, gatewayEvent.Content);
-            await messageExtensions.AddConfirmationAsync(gatewayEvent.ChannelID, gatewayEvent);
             return Result.FromSuccess();
         }
     }

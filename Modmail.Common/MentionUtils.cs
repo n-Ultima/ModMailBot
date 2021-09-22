@@ -1,4 +1,5 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Objects;
 
 namespace Modmail.Common
 {
@@ -9,5 +10,6 @@ namespace Modmail.Common
         public static string Mention(this IUser user) => $"<@{user.ID}>";
 
         public static string Mention(this IChannel channel) => $"<@#{channel.ID}>";
+        
     }
 }

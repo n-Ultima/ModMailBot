@@ -7,6 +7,7 @@ namespace Modmail.Data.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public long Id { get; set; }
 
+        [Column(TypeName = "citext")]
         public string Name { get; set; }
         
         public string Content { get; set; }

@@ -5,6 +5,7 @@ using Modmail;
 
 namespace Doraemon
 {
+    #nullable enable
     public class DoraemonBotHostedService : IHostedService
     {
         private readonly ModmailBot _botClient;
@@ -23,4 +24,5 @@ namespace Doraemon
             return _runTask ?? Task.CompletedTask;
         }
     }
+    #nullable disable
 }

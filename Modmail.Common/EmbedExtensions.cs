@@ -6,6 +6,7 @@ namespace Modmail.Common
 {
     public static class EmbedExtensions
     {
+        #nullable enable
         public static Optional<IEmbedAuthor> WithUserAsAuthor(this IUser? user, string? extra = null)
         {
             if (user == null)
@@ -22,5 +23,6 @@ namespace Modmail.Common
 
             return new EmbedAuthor(user.Tag() + suffix, IconUrl: user.GetDefiniteAvatarUrl());
         }
+        #nullable disable
     }
 }
