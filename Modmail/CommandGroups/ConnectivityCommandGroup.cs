@@ -23,7 +23,7 @@ namespace Doraemon.CommandGroups {
 
         [Command("ping")]
         [Description("Replies with pong.")]
-        public async Task<Result> PingAsync()
+        public async Task<IResult> PingAsync()
         {
             var time = DateTimeOffset.UtcNow - _messageContext.Message.Timestamp.Value;
             var result = await _channelApi.CreateMessageAsync(_messageContext.ChannelID, $"🏓 Pong! {time.Milliseconds} ms", ct: CancellationToken);

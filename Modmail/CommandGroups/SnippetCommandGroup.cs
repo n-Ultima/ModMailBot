@@ -36,7 +36,7 @@ namespace Doraemon.CommandGroups
 
         [Command("snippet")]
         [Description("Sends the snippet to the DM Channel, or previews it if not in a modmail channel.")]
-        public async Task<Result> DisplaySnippetAsync(string snippetName)
+        public async Task<IResult> DisplaySnippetAsync(string snippetName)
         {
             var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
             var cmdGroup = new SnippetCommandGroup(_channelApi, _guildApi, _snippetService, _modmailTicketService, _messageContext);
@@ -124,7 +124,7 @@ namespace Doraemon.CommandGroups
 
         [Command("preview")]
         [Description("Previews a snippets content.")]
-        public async Task<Result> PreviewSnippetAsync(string snippetName)
+        public async Task<IResult> PreviewSnippetAsync(string snippetName)
         {
             var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
             if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Moderator))
@@ -152,7 +152,7 @@ namespace Doraemon.CommandGroups
         }
         [Command("create", "add")]
         [Description("Creates a snippet for later use.")]
-        public async Task<Result> CreateSnippetAsync(string snippetName, [Greedy] string snippetContent)
+        public async Task<IResult> CreateSnippetAsync(string snippetName, [Greedy] string snippetContent)
         {
             var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
             var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
@@ -177,7 +177,7 @@ namespace Doraemon.CommandGroups
 
         [Command("edit", "modify")]
         [Description("Modifies an existing snippets content.")]
-        public async Task<Result> EditSnippetAsync(string snippetName, [Greedy] string newContent)
+        public async Task<IResult> EditSnippetAsync(string snippetName, [Greedy] string newContent)
         {
             var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
             var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
@@ -202,7 +202,7 @@ namespace Doraemon.CommandGroups
 
         [Command("delete", "remove")]
         [Description("Deletes a snippet.")]
-        public async Task<Result> DeleteSnippetAsync(string snippetName)
+        public async Task<IResult> DeleteSnippetAsync(string snippetName)
         {
             var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
             var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);

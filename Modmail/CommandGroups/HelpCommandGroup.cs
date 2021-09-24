@@ -44,7 +44,7 @@ namespace Doraemon.CommandGroups
 
         [Command("help")]
         [Description("Shows help for the command provided.")]
-        public async Task<Result> DisplayModulesAsync([Greedy] string name = null)
+        public async Task<IResult> DisplayHelpInfoAsync([Greedy] string name = null)
         {
             if (name == null)
             {

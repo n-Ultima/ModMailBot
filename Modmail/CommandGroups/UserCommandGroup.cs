@@ -35,7 +35,7 @@ namespace Doraemon.CommandGroups
         
         [Command("block")]
         [Description("Blocks a user from contacting modmail.")]
-        public async Task<Result> BlockUserAsync(IGuildMember member, [Greedy] string reason = null)
+        public async Task<IResult> BlockUserAsync(IGuildMember member, [Greedy] string reason = null)
         {
             var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
             var executor = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID);
@@ -68,7 +68,7 @@ namespace Doraemon.CommandGroups
 
         [Command("unblock")]
         [Description("Unblocks a user from contacting modmail.")]
-        public async Task<Result> UnblockUserAsync(IGuildMember member, [Greedy] string reason = null)
+        public async Task<IResult> UnblockUserAsync(IGuildMember member, [Greedy] string reason = null)
         {
             var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
             var executor = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID);
