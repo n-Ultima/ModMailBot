@@ -236,7 +236,7 @@ namespace Doraemon.CommandGroups
             }
             if (permissionLevel == PermissionLevel.Moderator)
             {
-                if (member.Roles.Contains(new Snowflake(ModmailConfig.ModRoleId)) || member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)))
+                if (member.Roles.Contains(new Snowflake(ModmailConfig.ModRoleId)) || member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || member.Permissions.Value.HasPermission(DiscordPermission.Administrator))
                 {
                     return true;
                 }
@@ -246,7 +246,7 @@ namespace Doraemon.CommandGroups
 
             if (permissionLevel == PermissionLevel.Administrator)
             {
-                if (member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)))
+                if (member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || member.Permissions.Value.HasPermission(DiscordPermission.Administrator))
                 {
                     return true;
                 }
