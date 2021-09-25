@@ -1,5 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Gateway.Commands;
+using Remora.Discord.API.Objects;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Results;
 using Remora.Results;

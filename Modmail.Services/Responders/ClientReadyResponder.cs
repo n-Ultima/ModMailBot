@@ -5,8 +5,12 @@ using Humanizer;
 using Microsoft.Extensions.Hosting;
 using Modmail.Common;
 using Remora.Discord.API.Abstractions.Gateway.Events;
+using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
+using Remora.Discord.API.Gateway.Commands;
+using Remora.Discord.API.Objects;
 using Remora.Discord.Core;
+using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Responders;
 using Remora.Discord.Rest.API;
 using Remora.Results;
@@ -19,13 +23,15 @@ namespace Modmail.Services.Responders
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly IDiscordRestUserAPI _userApi;
         private readonly IHostApplicationLifetime _applicationLifetime;
+        private readonly DiscordGatewayClient _discordGatewayClient;
         public ModmailConfiguration ModmailConfig = new();
         
-        public ClientReadyResponder(IDiscordRestGuildAPI guildApi, IDiscordRestUserAPI userApi, IHostApplicationLifetime hostApplicationLifetime)
+        public ClientReadyResponder(IDiscordRestGuildAPI guildApi, IDiscordRestUserAPI userApi, IHostApplicationLifetime hostApplicationLifetime, DiscordGatewayClient discordGatewayClient)
         {
             _guildApi = guildApi;
             _userApi = userApi;
             _applicationLifetime = hostApplicationLifetime;
+            _discordGatewayClient = discordGatewayClient;
         }
 
         public async Task<Result> RespondAsync(IReady gatewayEvent, CancellationToken ct = new CancellationToken())
@@ -71,6 +77,11 @@ namespace Modmail.Services.Responders
                 _applicationLifetime.StopApplication();
             }
             Log.Logger.Information("Successfully started with the following configuration:\nOwnerIds: {ownerIds}\nMainGuildName: {mainGuildName}\nInboxGuildName: {inboxGuildName}", ModmailConfig.OwnerIds.Humanize(), mainGuild.Entity.Name, inboxGuild.Entity.Name);
+            var status = new UpdatePresence(ClientStatus.Online, false, null, new[]
+            {
+                new Activity("for private messages", ActivityType.Watching)
+            });
+            _discordGatewayClient.SubmitCommandAsync(status);
             return Result.FromSuccess();
         }
     }
