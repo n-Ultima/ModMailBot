@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Humanizer;
 using Modmail.Common;
 using Modmail.Services;
 using Remora.Commands.Attributes;
@@ -24,7 +25,7 @@ namespace Doraemon.CommandGroups
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly SnippetService _snippetService;
         private readonly ModmailTicketService _modmailTicketService;
-
+        public ModmailConfiguration ModmailConfig = new();
         public SnippetCommand(MessageContext messageContext, IDiscordRestGuildAPI guildApi, IDiscordRestChannelAPI channelApi, SnippetService snippetService, ModmailTicketService modmailTicketService)
         {
             _messageContext = messageContext;
@@ -38,9 +39,14 @@ namespace Doraemon.CommandGroups
         [Description("Sends the snippet to the DM Channel, or previews it if not in a modmail channel.")]
         public async Task<IResult> DisplaySnippetAsync(string snippetName)
         {
-            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
-            var cmdGroup = new SnippetCommandGroup(_channelApi, _guildApi, _snippetService, _modmailTicketService, _messageContext);
-            if (!cmdGroup.TryAuthenticateUser(executor.Entity, PermissionLevel.Moderator))
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
+            
+            var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
+            var everyoneRole = guildRoles.Entity
+                .Where(x => x.ID == guild.Entity.ID)
+                .FirstOrDefault(); var cmdGroup = new SnippetCommandGroup(_channelApi, _guildApi, _snippetService, _modmailTicketService, _messageContext);
+            if (!await cmdGroup.TryAuthenticateUser(executor.Entity, guild.Entity, everyoneRole, PermissionLevel.Moderator))
             {
                 return Result.FromSuccess();
             }
@@ -51,7 +57,6 @@ namespace Doraemon.CommandGroups
                 return Result.FromError(new ExceptionError(new Exception("The snippet provided was not found.")));
             }
             var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
-            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value);
             var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_messageContext.ChannelID);
             if (modmailTicket == null)
             {
@@ -69,7 +74,6 @@ namespace Doraemon.CommandGroups
             }
 
             string highestRoleName;
-            var guildRoles = await _guildApi.GetGuildRolesAsync(_messageContext.GuildID.Value, CancellationToken);
             var memberHighestRole = guildRoles.Entity
                 .Where(x => executor.Entity.Roles.Contains(x.ID))
                 .OrderByDescending(x => x.Position)
@@ -126,13 +130,17 @@ namespace Doraemon.CommandGroups
         [Description("Previews a snippets content.")]
         public async Task<IResult> PreviewSnippetAsync(string snippetName)
         {
-            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
-            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Moderator))
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
+            
+            var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
+            var everyoneRole = guildRoles.Entity
+                .Where(x => x.ID == guild.Entity.ID)
+                .FirstOrDefault();
+            if (!await TryAuthenticateUser(executor.Entity, guild.Entity,everyoneRole, PermissionLevel.Moderator))
             {
                 return Result.FromSuccess();
             }
-            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
-            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value);
             var snippet = await _snippetService.FetchSnippetAsync(snippetName);
             if (snippet == null)
             {
@@ -154,10 +162,14 @@ namespace Doraemon.CommandGroups
         [Description("Creates a snippet for later use.")]
         public async Task<IResult> CreateSnippetAsync(string snippetName, [Greedy] string snippetContent)
         {
-            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
-            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
-            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value);
-            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Administrator))
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
+            
+            var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
+            var everyoneRole = guildRoles.Entity
+                .Where(x => x.ID == guild.Entity.ID)
+                .FirstOrDefault();
+            if (!await TryAuthenticateUser(executor.Entity, guild.Entity,everyoneRole, PermissionLevel.Administrator))
             {
                 return Result.FromSuccess();
             }
@@ -179,10 +191,14 @@ namespace Doraemon.CommandGroups
         [Description("Modifies an existing snippets content.")]
         public async Task<IResult> EditSnippetAsync(string snippetName, [Greedy] string newContent)
         {
-            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
-            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
-            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value);
-            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Administrator))
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
+            
+            var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
+            var everyoneRole = guildRoles.Entity
+                .Where(x => x.ID == guild.Entity.ID)
+                .FirstOrDefault();
+            if (!await TryAuthenticateUser(executor.Entity, guild.Entity,everyoneRole, PermissionLevel.Administrator))
             {
                 return Result.FromSuccess();
             }
@@ -204,10 +220,14 @@ namespace Doraemon.CommandGroups
         [Description("Deletes a snippet.")]
         public async Task<IResult> DeleteSnippetAsync(string snippetName)
         {
-            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID);
-            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
-            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value);
-            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Administrator))
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
+            
+            var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
+            var everyoneRole = guildRoles.Entity
+                .Where(x => x.ID == guild.Entity.ID)
+                .FirstOrDefault();
+            if (!await TryAuthenticateUser(executor.Entity, guild.Entity,everyoneRole, PermissionLevel.Administrator))
             {
                 return Result.FromSuccess();
             }
@@ -225,15 +245,21 @@ namespace Doraemon.CommandGroups
                 : Result.FromError(result.Error);
         }
         
-        public bool TryAuthenticateUser(IGuildMember member, PermissionLevel permissionLevel)
+        public async Task<bool> TryAuthenticateUser(IGuildMember member, IGuild guild, IRole everyoneRole, PermissionLevel permissionLevel)
         {
             if (member == null)
             {
                 throw new ArgumentNullException(nameof(member));
             }
+
+            var guildRoles = await _guildApi.GetGuildRolesAsync(guild.ID, CancellationToken);
+            var memberRoles = guildRoles.Entity
+                .Where(x => member.Roles.Contains(x.ID))
+                .ToList();
+            var permissions = DiscordPermissionSet.ComputePermissions(member.User.Value.ID, everyoneRole, memberRoles);
             if (permissionLevel == PermissionLevel.Moderator)
             {
-                if (member.Roles.Contains(new Snowflake(ModmailConfig.ModRoleId)) || member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || member.Permissions.Value.HasPermission(DiscordPermission.Administrator))
+                if (member.Roles.Contains(new Snowflake(ModmailConfig.ModRoleId)) || member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || permissions.HasPermission(DiscordPermission.Administrator))
                 {
                     return true;
                 }
@@ -243,7 +269,7 @@ namespace Doraemon.CommandGroups
 
             if (permissionLevel == PermissionLevel.Administrator)
             {
-                if (member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || member.Permissions.Value.HasPermission(DiscordPermission.Administrator))
+                if (member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || permissions.HasPermission(DiscordPermission.Administrator))
                 {
                     return true;
                 }

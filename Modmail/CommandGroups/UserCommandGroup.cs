@@ -8,6 +8,7 @@ using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
+using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
@@ -37,10 +38,13 @@ namespace Doraemon.CommandGroups
         [Description("Blocks a user from contacting modmail.")]
         public async Task<IResult> BlockUserAsync(IGuildMember member, [Greedy] string reason = null)
         {
-            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
-            var executor = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID);
-            var guild = await _guildApi.GetGuildAsync(_context.GuildID.Value);
-            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Moderator))
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
+            var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
+            var everyoneRole = guildRoles.Entity
+                .Where(x => x.ID == guild.Entity.ID)
+                .FirstOrDefault();
+            if (!await TryAuthenticateUser(executor.Entity, guild.Entity,everyoneRole, PermissionLevel.Administrator))
             {
                 return Result.FromSuccess();
             }
@@ -70,10 +74,14 @@ namespace Doraemon.CommandGroups
         [Description("Unblocks a user from contacting modmail.")]
         public async Task<IResult> UnblockUserAsync(IGuildMember member, [Greedy] string reason = null)
         {
-            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
-            var executor = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID);
-            var guild = await _guildApi.GetGuildAsync(_context.GuildID.Value);
-            if (!TryAuthenticateUser(executor.Entity, PermissionLevel.Moderator))
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
+            
+            var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
+            var everyoneRole = guildRoles.Entity
+                .Where(x => x.ID == guild.Entity.ID)
+                .FirstOrDefault();
+            if (!await TryAuthenticateUser(executor.Entity, guild.Entity,everyoneRole, PermissionLevel.Administrator))
             {
                 return Result.FromSuccess();
             }
@@ -99,15 +107,21 @@ namespace Doraemon.CommandGroups
                 : Result.FromError(successResult.Error);
         }
         
-        public bool TryAuthenticateUser(IGuildMember member, PermissionLevel permissionLevel)
+        public async Task<bool> TryAuthenticateUser(IGuildMember member, IGuild guild, IRole everyoneRole, PermissionLevel permissionLevel)
         {
             if (member == null)
             {
                 throw new ArgumentNullException(nameof(member));
             }
+
+            var guildRoles = await _guildApi.GetGuildRolesAsync(guild.ID, CancellationToken);
+            var memberRoles = guildRoles.Entity
+                .Where(x => member.Roles.Contains(x.ID))
+                .ToList();
+            var permissions = DiscordPermissionSet.ComputePermissions(member.User.Value.ID, everyoneRole, memberRoles);
             if (permissionLevel == PermissionLevel.Moderator)
             {
-                if (member.Roles.Contains(new Snowflake(ModmailConfig.ModRoleId)) || member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || member.Permissions.Value.HasPermission(DiscordPermission.Administrator))
+                if (member.Roles.Contains(new Snowflake(ModmailConfig.ModRoleId)) || member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || permissions.HasPermission(DiscordPermission.Administrator))
                 {
                     return true;
                 }
@@ -117,7 +131,7 @@ namespace Doraemon.CommandGroups
 
             if (permissionLevel == PermissionLevel.Administrator)
             {
-                if (member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || member.Permissions.Value.HasPermission(DiscordPermission.Administrator))
+                if (member.Roles.Contains(new Snowflake(ModmailConfig.AdminRoleId)) || permissions.HasPermission(DiscordPermission.Administrator))
                 {
                     return true;
                 }

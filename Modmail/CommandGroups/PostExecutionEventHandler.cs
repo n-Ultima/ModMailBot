@@ -25,7 +25,7 @@ namespace Doraemon.CommandGroups
         {
             if (!commandResult.IsSuccess)
             {
-                if (commandResult.Error.Message.Equals("User is blacklisted from using the bot.") || commandResult.Error.Message.Equals("Commands can only be ran in the guild."))
+                if (commandResult.Error.Message.Equals("User is blacklisted from using the bot.") || commandResult.Error.Message.Equals("Commands can only be ran in the guild.") || commandResult.Error.Message.Equals("Not in the inbox guild."))
                 {
                     return Result.FromSuccess();
                 }

@@ -2,9 +2,11 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Modmail.Common;
 using Modmail.Services;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Services;
+using Remora.Discord.Core;
 using Remora.Results;
 
 namespace Doraemon.CommandGroups
@@ -12,7 +14,7 @@ namespace Doraemon.CommandGroups
     public class PreExecutionEventHandler : IPreExecutionEvent
     {
         private readonly UserService _userService;
-
+        public ModmailConfiguration ModmailConfig = new();
         public PreExecutionEventHandler(UserService userService)
             => _userService = userService;
         public async Task<Result> BeforeExecutionAsync(ICommandContext context, CancellationToken ct = new CancellationToken())
@@ -27,6 +29,10 @@ namespace Doraemon.CommandGroups
                 return Result.FromError(new ExceptionError(new Exception("User is blacklisted from using the bot.")));
             }
 
+            if (context.GuildID.Value != new Snowflake(ModmailConfig.InboxServerId))
+            {
+                return Result.FromError(new ExceptionError(new Exception("Not in the inbox guild.")));
+            }
             return Result.FromSuccess();
         }
     }
