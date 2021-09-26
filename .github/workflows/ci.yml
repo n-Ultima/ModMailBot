@@ -1,0 +1,30 @@
+﻿name: Continuous Integration
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.vscode/**'
+      - '.github/**'
+      - 'README.md'
+      - 'full-start.sh'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '.vscode/**'
+      - '.github/**'
+      - 'README.md'
+      - 'full-start.sh'
+jobs:
+  continuous-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.400
+      - name: dotnet build
+        run: dotnet build --configuration 'Release' /warnaserror
