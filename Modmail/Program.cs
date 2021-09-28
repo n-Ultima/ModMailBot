@@ -66,9 +66,8 @@ namespace Modmail
                             x.Intents |= GatewayIntents.GuildMessages;
                             x.Intents |= GatewayIntents.GuildMembers;
                         })
-                        .AddHostedService<DoraemonBotHostedService>()
-                        .AddDbContext<ModmailContext>(x => x.UseNpgsql(context.Configuration["DbConnectionString"]))
-                        .AddTransient<ModmailBot>();
+                        .AddHostedService<ModmailBotHostedService>()
+                        .AddDbContext<ModmailContext>(x => x.UseNpgsql(context.Configuration["DbConnectionString"]));
                 })
                 .UseSerilog(Log.Logger)
                 .UseConsoleLifetime();

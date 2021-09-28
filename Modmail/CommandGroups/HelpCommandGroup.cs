@@ -51,8 +51,8 @@ namespace Doraemon.CommandGroups
                 var defaultEmbed = new Embed
                 {
                     Title = "Help",
-                    Footer = new EmbedFooter($"Use {ModmailConfig.Prefix}help <commandName> to display help for a specific command."),
-                    Description = $"Modules: Connectivity, Help, Modmail, Snippet, User-Management",
+                    Footer = new EmbedFooter($"Use {ModmailConfig.Prefix}help <commandName> to display help for a specific command.\n[] is an indicator of aliases. So for respond, you can also use r, or reply."),
+                    Description = $"Commands: ```\nping, help, respond[r, reply], edit, move, close[end], snippet, snippet preview, snippet create[snippet add], snippet edit[snippet modify], snippet remove[snippet delete], unblock, block\n```",
                     Colour = Color.Aqua,
                 };
                 var defaultResult = await _channelApi.CreateMessageAsync(_messageContext.ChannelID, embeds: new[] {defaultEmbed}, ct: CancellationToken);
@@ -63,8 +63,8 @@ namespace Doraemon.CommandGroups
 
             // Due to Remora.Discord's command system, there's a few things:
             // One: Groups aren't registered as part of the command name
-            // Two: Getting their description via reflection is being a total shit right now.
-            // Time to hardcode the commands.
+            // Two: Reflection
+            // Because of this, I have to resort to this. It isn't terrible until I have tons of commands.
             var loweredInput = name.ToLower();
             string cmd;
             switch (loweredInput)
@@ -96,11 +96,14 @@ namespace Doraemon.CommandGroups
                 case "snippet":
                     cmd = "**Command Name:** snippet\n**Command Parameters:** `<snippetName>`\n**Command Description:** Sends the snippet provided to the corresponding DM channel of the guild. If ran in a non-modmail channel, sends the snippet content as a preview.";
                     break;
+                case "move":
+                    cmd = "**Command Name:** move\n**Command Parameters:** `<categoryId>`\n**Command Description:** Moves the modmail ticket over to another category.";
+                    break;
                 case "snippet preview":
                     cmd = "**Command Name:** snippet preview\n**Command Parameters:** `<snippetName>`\n**Command Description:** Previews a snippet even if ran in a modmail channel.";
                     break;
                 case "snippet create":
-                    cmd = "**Command Name:** snippet create\n**Command Parameters:** `<snippetName>` `<snippetContent>`\n**Command Description:** Creates a snippet with the provided name and content.";
+                    cmd = "**Command Name:** snippet create, snippet add\n**Command Parameters:** `<snippetName>` `<snippetContent>`\n**Command Description:** Creates a snippet with the provided name and content.";
                     break;
                 case "snippet add":
                     cmd = "**Command Name:** snippet create, snippet add\n**Command Parameters:** `<snippetName>` `<snippetContent>`\n**Command Description:** Creates a snippet with the provided name and content.";

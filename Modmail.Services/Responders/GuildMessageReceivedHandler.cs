@@ -43,10 +43,6 @@ namespace Modmail.Services.Responders
             {
                 return Result.FromSuccess();
             }
-            if (channel.Entity.ParentID.Value.Value.Value != ModmailConfig.ModmailCategoryId)
-            {
-                return Result.FromSuccess();
-            }
 
             if (gatewayEvent.Author.IsBot.HasValue)
             {
