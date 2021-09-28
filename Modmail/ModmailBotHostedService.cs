@@ -1,8 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.API.Gateway.Commands;
-using Remora.Discord.API.Objects;
+using Microsoft.Extensions.Hosting;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Results;
 using Remora.Results;
@@ -10,13 +8,16 @@ using Serilog;
 
 namespace Modmail
 {
-    public class ModmailBot
+    public class ModmailBotHostedService : IHostedService
     {
         private readonly DiscordGatewayClient _discordGatewayClient;
-
-        public ModmailBot(DiscordGatewayClient discordGatewayClient)
-            => _discordGatewayClient = discordGatewayClient;
-        public async Task RunAsync(CancellationToken cancellationToken)
+        private readonly IHostApplicationLifetime _applicationLifetime;
+        public ModmailBotHostedService(DiscordGatewayClient discordGatewayClient, IHostApplicationLifetime applicationLifetime)
+        {
+            _discordGatewayClient = discordGatewayClient;
+            _applicationLifetime = applicationLifetime;
+        }
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             var runResult = await _discordGatewayClient.RunAsync(cancellationToken);
             if (!runResult.IsSuccess)
@@ -41,6 +42,13 @@ namespace Modmail
                     }
                 }
             }
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _applicationLifetime.StopApplication();
+            Log.Logger.Information("Stopped ModmailBot");
+            return Task.CompletedTask;
         }
     }
 }

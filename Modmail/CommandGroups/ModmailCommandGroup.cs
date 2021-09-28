@@ -35,18 +35,14 @@ namespace Doraemon.CommandGroups
         private readonly ModmailTicketService _modmailTicketService;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly MessageContext _messageContext;
-        private readonly UserService _userService;
-        private readonly SnippetService _snippetService;
 
-        public ModmailCommandGroup(ICommandContext context, IDiscordRestChannelAPI channelApi, ModmailTicketService modmailTicketService, IDiscordRestGuildAPI guildApi, MessageContext messageContext, UserService userService, SnippetService snippetService)
+        public ModmailCommandGroup(ICommandContext context, IDiscordRestChannelAPI channelApi, ModmailTicketService modmailTicketService, IDiscordRestGuildAPI guildApi, MessageContext messageContext)
         {
             _context = context;
             _channelApi = channelApi;
             _modmailTicketService = modmailTicketService;
             _guildApi = guildApi;
             _messageContext = messageContext;
-            _userService = userService;
-            _snippetService = snippetService;
         }
         public ModmailConfiguration ModmailConfig = new();
 
@@ -241,6 +237,51 @@ namespace Doraemon.CommandGroups
             return successResult.IsSuccess
                 ? Result.FromSuccess()
                 : Result.FromError(successResult.Error);
+        }
+
+        [Command("move")]
+        [Description("Move the modmail ticket over to another category.")]
+        public async Task<IResult> MoveTicketAsync(Snowflake categoryId)
+        {
+            var executor = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID, CancellationToken);
+            var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
+            
+            var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
+            var everyoneRole = guildRoles.Entity
+                .Where(x => x.ID == guild.Entity.ID)
+                .FirstOrDefault();
+            if (!await TryAuthenticateUser(executor.Entity, guild.Entity,everyoneRole, PermissionLevel.Moderator))
+            {
+                return Result.FromSuccess();
+            }
+
+            if (!ModmailConfig.AllowMove)
+            {
+                return Result.FromSuccess();
+            }
+            var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_messageContext.ChannelID);
+            if (modmailTicket == null)
+            {
+                return Result.FromError(new ExceptionError(new Exception("This command can only be ran inside of modmail ticket channels.")));
+            }
+
+            var channel = await _channelApi.GetChannelAsync(categoryId, CancellationToken);
+            if (!channel.IsSuccess || channel.Entity.Type != ChannelType.GuildCategory)
+            {
+                return Result.FromError(new ExceptionError(new Exception("The ID provided is not a valid category ID.")));
+            }
+            
+            var result = await _channelApi.ModifyChannelAsync(_messageContext.ChannelID, parentId: categoryId, ct: CancellationToken);
+            if (!result.IsSuccess)
+            {
+                return Result.FromError(result.Error);
+            }
+
+            await _modmailTicketService.AddMessageToModmailTicketAsync(modmailTicket.Id, _messageContext.MessageID, _messageContext.User.ID, $"(SYSTEM){_messageContext.User.Tag()} moved the ticket to category {channel.Entity.Name.Value}");
+            var success = await _channelApi.CreateMessageAsync(_messageContext.ChannelID, "Ticket successfully moved.", ct: CancellationToken);
+            return success.IsSuccess
+                ? Result.FromSuccess()
+                : Result.FromError(success.Error);
         } 
         public async Task<bool> TryAuthenticateUser(IGuildMember member, IGuild guild, IRole everyoneRole, PermissionLevel permissionLevel)
         {

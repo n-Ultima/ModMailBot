@@ -96,6 +96,9 @@ namespace Doraemon.CommandGroups
                 case "snippet":
                     cmd = "**Command Name:** snippet\n**Command Parameters:** `<snippetName>`\n**Command Description:** Sends the snippet provided to the corresponding DM channel of the guild. If ran in a non-modmail channel, sends the snippet content as a preview.";
                     break;
+                case "move":
+                    cmd = "**Command Name:** move\n**Command Parameters:** `<categoryId>`\n**Command Description:** Moves the modmail ticket over to another category.";
+                    break;
                 case "snippet preview":
                     cmd = "**Command Name:** snippet preview\n**Command Parameters:** `<snippetName>`\n**Command Description:** Previews a snippet even if ran in a modmail channel.";
                     break;
