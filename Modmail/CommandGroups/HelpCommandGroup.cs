@@ -127,7 +127,7 @@ namespace Doraemon.CommandGroups
                     cmd = "**Command Name:** unblock\n**Command Parameters:** `<userMention | userId>` `[reason]`\n**Command Description:** Unblocks a user from interacting with the bot.";
                     break;
                 default:
-                    return Result.FromError(new ExceptionError(new Exception("Command not found.")));
+                    throw new Exception("Command not found.");
             }
 
             var embed = new Embed

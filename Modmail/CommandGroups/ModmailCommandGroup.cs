@@ -50,7 +50,6 @@ namespace Doraemon.CommandGroups
         [Description("Replies to a modmail thread.")]
         public async Task<IResult> RespondAsync([Greedy] string content)
         {
-            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
             var guildMember = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID, CancellationToken);
             var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
             
@@ -65,7 +64,7 @@ namespace Doraemon.CommandGroups
             var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_context.ChannelID);
             if (modmailTicket == null)
             {
-                return Result.FromError(new ExceptionError(new Exception("That command can only be ran inside of modmail ticket channels.")));
+                throw new Exception("This command can only be ran inside of modmail ticket channels.");
             }
             string highestRoleName;
             var memberHighestRole = guildRoles.Entity
@@ -140,11 +139,10 @@ namespace Doraemon.CommandGroups
             {
                 return Result.FromSuccess();
             }
-            var fullMessage = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, _messageContext.MessageID);
             var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_context.ChannelID);
             if (modmailTicket == null)
             {
-                return Result.FromError(new ExceptionError(new Exception("This command can only be ran in modmail ticket channels.")));
+                throw new Exception("This command can only be ran inside of modmail ticket channels.");
             }
 
             var stringBuilder = new StringBuilder();
@@ -195,17 +193,17 @@ namespace Doraemon.CommandGroups
             var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_messageContext.ChannelID);
             if (modmailTicket == null)
             {
-                return Result.FromError(new ExceptionError(new Exception("This command can only be ran inside of modmail thread channels.")));
+                throw new Exception("This command can only be ran inside of modmail ticket channels.");
             }
             var message = await _channelApi.GetChannelMessageAsync(_messageContext.ChannelID, messageId);
             if (!message.IsSuccess)
             {
-                return Result.FromError(new ExceptionError(new Exception("The message ID provided was not valid.")));
+                throw new Exception("The message ID provided is not valid.");
             }
 
             if (message.Entity.Author.ID != _context.User.ID)
             {
-                return Result.FromError(new ExceptionError(new Exception("You cannot edit a message that wasn't sent by you.")));
+                throw new Exception("You cannot edit a message that was not authored by you.");
             }
 
             var modmailMessages = await _modmailTicketService.FetchModmailMessagesAsync(modmailTicket.Id);
@@ -215,7 +213,7 @@ namespace Doraemon.CommandGroups
             if (oldMessage == null)
             {
                 Log.Logger.Error("Message ID {messageId} not found in the database.", messageId);
-                return Result.FromError(new ExceptionError(new Exception("There was an error when trying to edit that message.")));
+                throw new Exception("There was an issue attempting to edit this message, please see the console.");
             }
             var embed = new Embed
             {
@@ -262,13 +260,13 @@ namespace Doraemon.CommandGroups
             var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_messageContext.ChannelID);
             if (modmailTicket == null)
             {
-                return Result.FromError(new ExceptionError(new Exception("This command can only be ran inside of modmail ticket channels.")));
+                throw new Exception("This command can only be ran inside of modmail ticket channels.");
             }
 
             var channel = await _channelApi.GetChannelAsync(categoryId, CancellationToken);
             if (!channel.IsSuccess || channel.Entity.Type != ChannelType.GuildCategory)
             {
-                return Result.FromError(new ExceptionError(new Exception("The ID provided is not a valid category ID.")));
+                throw new Exception("The category ID provided is not valid.");
             }
             
             var result = await _channelApi.ModifyChannelAsync(_messageContext.ChannelID, parentId: categoryId, ct: CancellationToken);

@@ -42,6 +42,7 @@ namespace Modmail
                     }
                 }
             }
+            Log.Logger.Information("Successfully connected to the API.");
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,25 +34,31 @@ namespace Doraemon.CommandGroups
             _userService = userService;
             _channelApi = channelApi;
         }
-        
         [Command("block")]
         [Description("Blocks a user from contacting modmail.")]
         public async Task<IResult> BlockUserAsync(IGuildMember member, [Greedy] string reason = null)
         {
             var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
             var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
+            
             var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
             var everyoneRole = guildRoles.Entity
                 .Where(x => x.ID == guild.Entity.ID)
                 .FirstOrDefault();
+            var user1Roles = guildRoles.Entity
+                .Where(x => executor.Entity.Roles.Contains(x.ID))
+                .ToList();
+            var user2Roles = guildRoles.Entity
+                .Where(x => member.Roles.Contains(x.ID))
+                .ToList();
             if (!await TryAuthenticateUser(executor.Entity, guild.Entity,everyoneRole, PermissionLevel.Administrator))
             {
                 return Result.FromSuccess();
             }
 
-            if (!await UserOutranksUser(guild.Entity, executor.Entity, member))
+            if (!executor.Entity.OutranksUser(member, guild.Entity, user1Roles, user2Roles))
             {
-                return Result.FromError(new ExceptionError(new Exception("Command executor must have a higher hierarchy.")));
+                throw new Exception("Command executor must have a higher hierarchy.");
             }
 
             var block = await _userService.BlacklistUserAsync(member.User.Value.ID);
@@ -81,14 +88,20 @@ namespace Doraemon.CommandGroups
             var everyoneRole = guildRoles.Entity
                 .Where(x => x.ID == guild.Entity.ID)
                 .FirstOrDefault();
+            var user1Roles = guildRoles.Entity
+                .Where(x => executor.Entity.Roles.Contains(x.ID))
+                .ToList();
+            var user2Roles = guildRoles.Entity
+                .Where(x => member.Roles.Contains(x.ID))
+                .ToList();
             if (!await TryAuthenticateUser(executor.Entity, guild.Entity,everyoneRole, PermissionLevel.Administrator))
             {
                 return Result.FromSuccess();
             }
 
-            if (!await UserOutranksUser(guild.Entity, executor.Entity, member))
+            if (!executor.Entity.OutranksUser(member, guild.Entity, user1Roles, user2Roles))
             {
-                return Result.FromError(new ExceptionError(new Exception("Command executor must have a higher hierarchy.")));
+                throw new Exception("Command executor must have a higher hierarchy.");
             }
 
             var unblock = await _userService.WhitelistUserAsync(member.User.Value.ID);
@@ -139,39 +152,6 @@ namespace Doraemon.CommandGroups
                 return false;
             }
 
-            return false;
-        }
-        private async Task<bool> UserOutranksUser(IGuild guild, IGuildMember user1, IGuildMember user2)
-        {
-            if (user1.User.Value.ID == user2.User.Value.ID)
-                return false;
-            if (guild.OwnerID == user1.User.Value.ID)
-                return true;
-            if (guild.OwnerID == user2.User.Value.ID)
-                return false;
-            if(user1.Roles.Any() && user2.Roles.Any())
-            {
-                var guildRoles = await _guildApi.GetGuildRolesAsync(guild.ID, CancellationToken);
-                var user1Roles = guildRoles.Entity
-                    .Where(x => user1.Roles.Contains(x.ID))
-                    .OrderByDescending(x => x.Position)
-                    .First();
-                var user2Roles = guildRoles.Entity
-                    .Where(x => user2.Roles.Contains(x.ID))
-                    .OrderByDescending(x => x.Position)
-                    .First();
-                return user1Roles.Position > user2Roles.Position;   
-            }
-
-            if (user1.Roles.Any() && !user2.Roles.Any())
-            {
-                return true;
-            }
-
-            if (!user1.Roles.Any() && user2.Roles.Any())
-            {
-                return false;
-            }
             return false;
         }
     }

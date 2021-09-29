@@ -31,6 +31,7 @@ namespace Modmail.Services.Responders
             var result = _cacheService.TryGetValue<IMessage>(key, out var oldMessage);
             if (!result)
             {
+                Log.Logger.Warning("The message ID {messageId} could not be found in the cache when it was edited.", gatewayEvent.ID.Value);
                 return Result.FromSuccess();
             }
 

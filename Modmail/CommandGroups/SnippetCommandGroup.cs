@@ -144,7 +144,7 @@ namespace Doraemon.CommandGroups
             var snippet = await _snippetService.FetchSnippetAsync(snippetName);
             if (snippet == null)
             {
-                return Result.FromError(new ExceptionError(new Exception("The snippet provided was not found.")));
+                throw new Exception("The snippet provided was not found.");
             }
 
             var embed = new Embed
@@ -177,7 +177,7 @@ namespace Doraemon.CommandGroups
             var snippet = await _snippetService.FetchSnippetAsync(snippetName);
             if (snippet != null)
             {
-                return Result.FromError(new ExceptionError(new Exception("A snippet with this name already exists.")));
+                 throw new Exception("A snippet with that name already exists.");
             }
 
             await _snippetService.CreateSnippetAsync(snippetName, snippetContent);
@@ -206,7 +206,7 @@ namespace Doraemon.CommandGroups
             var snippet = await _snippetService.FetchSnippetAsync(snippetName);
             if (snippet == null)
             {
-                return Result.FromError(new ExceptionError(new Exception("The snippet provided was not found.")));
+                throw new Exception("The snippet provided was not found.");
             }
 
             await _snippetService.EditSnippetAsync(snippet, newContent);
@@ -235,7 +235,7 @@ namespace Doraemon.CommandGroups
             var snippet = await _snippetService.FetchSnippetAsync(snippetName);
             if (snippet == null)
             {
-                return Result.FromError(new ExceptionError(new Exception("The snippet provided was not found.")));
+                throw new Exception("The snippet provided was not found.");
             }
 
             await _snippetService.DeleteSnippetAsync(snippet);

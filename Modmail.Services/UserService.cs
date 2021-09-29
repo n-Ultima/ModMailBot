@@ -36,8 +36,7 @@ namespace Modmail.Services
                 var modmailContext = scope.ServiceProvider.GetRequiredService<ModmailContext>();
                 var check = await modmailContext.BlockedUsers.FindAsync(userId);
                 if (check != null)
-                    return Result.FromError(new ExceptionError(new Exception("The user provided is already blocked.")));
-
+                    throw new Exception("The user provided is already blocked.");
                 modmailContext.BlockedUsers.Add(new BlockedUser
                 {
                     Id = userId
@@ -55,7 +54,7 @@ namespace Modmail.Services
                 var check = await modmailContext.BlockedUsers.FindAsync(userId);
                 if (check == null)
                 {
-                    return Result.FromError(new ExceptionError(new Exception("The user provided is not blocked.")));
+                    throw new Exception("The user provided was not blocked.");
                 }
 
                 modmailContext.BlockedUsers.Remove(check);
