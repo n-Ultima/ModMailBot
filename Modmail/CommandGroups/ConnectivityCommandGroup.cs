@@ -11,12 +11,10 @@ using Remora.Results;
 namespace Doraemon.CommandGroups {
     public class ConnectivityCommandGroup : CommandGroup
     {
-        private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly MessageContext _messageContext;
-        public ConnectivityCommandGroup(ICommandContext context, IDiscordRestChannelAPI channelApi, MessageContext messageContext)
+        public ConnectivityCommandGroup(IDiscordRestChannelAPI channelApi, MessageContext messageContext)
         {
-            _context = context;
             _channelApi = channelApi;
             _messageContext = messageContext;
         }

@@ -21,16 +21,14 @@ namespace Doraemon.CommandGroups
     {
         private readonly MessageContext _messageContext;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly ICommandContext _context;
         private readonly UserService _userService;
         private readonly IDiscordRestChannelAPI _channelApi;
         public ModmailConfiguration ModmailConfig = new();
 
-        public UserCommandGroup(MessageContext messageContext, IDiscordRestGuildAPI guildApi, ICommandContext context, UserService userService, IDiscordRestChannelAPI channelApi)
+        public UserCommandGroup(MessageContext messageContext, IDiscordRestGuildAPI guildApi, UserService userService, IDiscordRestChannelAPI channelApi)
         {
             _messageContext = messageContext;
             _guildApi = guildApi;
-            _context = context;
             _userService = userService;
             _channelApi = channelApi;
         }

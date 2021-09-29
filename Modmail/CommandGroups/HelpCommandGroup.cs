@@ -29,17 +29,13 @@ namespace Doraemon.CommandGroups
 {
     public class HelpCommandGroup : CommandGroup
     {
-        private readonly CommandService _commandService;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly MessageContext _messageContext;
-        private readonly CommandTree _commandTree;
         public ModmailConfiguration ModmailConfig = new();
-        public HelpCommandGroup(CommandService commandService, IDiscordRestChannelAPI channelApi, MessageContext messageContext, CommandTree commandTree)
+        public HelpCommandGroup(IDiscordRestChannelAPI channelApi, MessageContext messageContext)
         {
-            _commandService = commandService;
             _channelApi = channelApi;
             _messageContext = messageContext;
-            _commandTree = commandTree;
         }
 
         [Command("help")]

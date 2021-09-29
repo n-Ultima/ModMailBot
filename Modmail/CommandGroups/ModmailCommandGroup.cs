@@ -30,15 +30,13 @@ namespace Doraemon.CommandGroups
 
     public class ModmailCommandGroup : CommandGroup
     {
-        private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly ModmailTicketService _modmailTicketService;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly MessageContext _messageContext;
 
-        public ModmailCommandGroup(ICommandContext context, IDiscordRestChannelAPI channelApi, ModmailTicketService modmailTicketService, IDiscordRestGuildAPI guildApi, MessageContext messageContext)
+        public ModmailCommandGroup(IDiscordRestChannelAPI channelApi, ModmailTicketService modmailTicketService, IDiscordRestGuildAPI guildApi, MessageContext messageContext)
         {
-            _context = context;
             _channelApi = channelApi;
             _modmailTicketService = modmailTicketService;
             _guildApi = guildApi;
@@ -50,7 +48,7 @@ namespace Doraemon.CommandGroups
         [Description("Replies to a modmail thread.")]
         public async Task<IResult> RespondAsync([Greedy] string content)
         {
-            var guildMember = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID, CancellationToken);
+            var guildMember = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
             var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
             
             var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
@@ -61,7 +59,7 @@ namespace Doraemon.CommandGroups
             {
                 return Result.FromSuccess();
             }
-            var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_context.ChannelID);
+            var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_messageContext.ChannelID);
             if (modmailTicket == null)
             {
                 throw new Exception("This command can only be ran inside of modmail ticket channels.");
@@ -87,7 +85,7 @@ namespace Doraemon.CommandGroups
                 var attachmentEmbed = new Embed
                 {
                     Colour = Color.LimeGreen,
-                    Author = _context.User.WithUserAsAuthor(),
+                    Author = _messageContext.User.WithUserAsAuthor(),
                     Description = content,
                     Timestamp = DateTimeOffset.UtcNow,
                     Footer = new EmbedFooter(highestRoleName),
@@ -98,7 +96,7 @@ namespace Doraemon.CommandGroups
                 {
                     return Result.FromError(attachmentResult.Error);
                 }
-                await _modmailTicketService.AddMessageToModmailTicketAsync(modmailTicket.Id, _messageContext.MessageID, _context.User.ID, content);
+                await _modmailTicketService.AddMessageToModmailTicketAsync(modmailTicket.Id, _messageContext.MessageID, _messageContext.User.ID, content);
                 var successAttachmentResult = await _channelApi.CreateMessageAsync(_messageContext.ChannelID, "Here's what was sent to the user:", embeds: new[] {attachmentEmbed}, ct: CancellationToken);
                 return successAttachmentResult.IsSuccess
                     ? Result.FromSuccess()
@@ -107,7 +105,7 @@ namespace Doraemon.CommandGroups
             var embed = new Embed
             {
                 Colour = Color.LimeGreen,
-                Author = _context.User.WithUserAsAuthor(),
+                Author = _messageContext.User.WithUserAsAuthor(),
                 Description = content,
                 Timestamp = DateTimeOffset.UtcNow,
                 Footer = new EmbedFooter(highestRoleName),
@@ -117,7 +115,7 @@ namespace Doraemon.CommandGroups
             {
                 return Result.FromError(dmResult.Error);
             }
-            await _modmailTicketService.AddMessageToModmailTicketAsync(modmailTicket.Id, _messageContext.MessageID, _context.User.ID, content);
+            await _modmailTicketService.AddMessageToModmailTicketAsync(modmailTicket.Id, _messageContext.MessageID, _messageContext.User.ID, content);
             var successResult = await _channelApi.CreateMessageAsync(_messageContext.ChannelID, "Here's what was sent to the user:", embeds: new[] {embed}, ct: CancellationToken);
             return successResult.IsSuccess
                 ? Result.FromSuccess()
@@ -128,7 +126,7 @@ namespace Doraemon.CommandGroups
         [Description("Closes the modmail ticket.")]
         public async Task<IResult> CloseTicketAsync([Greedy] string reason = null)
         {
-            var executor = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID, CancellationToken);
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
             var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
             
             var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
@@ -139,7 +137,7 @@ namespace Doraemon.CommandGroups
             {
                 return Result.FromSuccess();
             }
-            var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_context.ChannelID);
+            var modmailTicket = await _modmailTicketService.FetchModmailTicketByModmailTicketChannelAsync(_messageContext.ChannelID);
             if (modmailTicket == null)
             {
                 throw new Exception("This command can only be ran inside of modmail ticket channels.");
@@ -178,7 +176,7 @@ namespace Doraemon.CommandGroups
         [Description("Edits a modmail message sent(use on the message you sent, not on the embed generated by the bot).")]
         public async Task<IResult> EditModmailMessageAsync(Snowflake messageId, [Greedy] string newMessageContent)
         {
-            var executor = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID, CancellationToken);
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
             var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
             
             var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
@@ -201,7 +199,7 @@ namespace Doraemon.CommandGroups
                 throw new Exception("The message ID provided is not valid.");
             }
 
-            if (message.Entity.Author.ID != _context.User.ID)
+            if (message.Entity.Author.ID != _messageContext.User.ID)
             {
                 throw new Exception("You cannot edit a message that was not authored by you.");
             }
@@ -241,7 +239,7 @@ namespace Doraemon.CommandGroups
         [Description("Move the modmail ticket over to another category.")]
         public async Task<IResult> MoveTicketAsync(Snowflake categoryId)
         {
-            var executor = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID, CancellationToken);
+            var executor = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, _messageContext.User.ID, CancellationToken);
             var guild = await _guildApi.GetGuildAsync(_messageContext.GuildID.Value, ct: CancellationToken);
             
             var guildRoles = await _guildApi.GetGuildRolesAsync(new Snowflake(ModmailConfig.InboxServerId), CancellationToken);
