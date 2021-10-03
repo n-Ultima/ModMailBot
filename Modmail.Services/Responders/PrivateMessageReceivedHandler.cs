@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -12,7 +13,9 @@ using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
+using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Responders;
+using Remora.Discord.Rest;
 using Remora.Results;
 
 namespace Modmail.Services.Responders
@@ -54,10 +57,40 @@ namespace Modmail.Services.Responders
             var dmModmail = await _modmailTicketService.FetchModmailTicketAsync(gatewayEvent.Author.ID);
             if (dmModmail == null)
             {
+                InteractionHandler.Confirmed = null;
                 var modmailGuild = await _guildApi.GetGuildAsync(new Snowflake(ModmailConfig.MainServerId), ct: ct);
                 var inboxGuild = await _guildApi.GetGuildAsync(new Snowflake(ModmailConfig.InboxServerId), ct: ct);
                 var modmailGuildMember = await _guildApi.GetGuildMemberAsync(modmailGuild.Entity.ID, gatewayEvent.Author.ID, ct);
                 var id = Guid.NewGuid();
+                if (ModmailConfig.ConfirmThreadCreation)
+                {
+                    List<IMessageComponent> components = new();
+                    components.Add(new ActionRowComponent(new[]
+                    {
+                        new ButtonComponent(ButtonComponentStyle.Success, "Open Thread", CustomID: "Confirm"),
+                        new ButtonComponent(ButtonComponentStyle.Danger, "Cancel", CustomID: "Cancel")
+                    }));
+                    // Assume we have to confirm the creation
+                    var confirmMessage = await _channelApi.CreateMessageAsync(gatewayEvent.ChannelID, "Are you sure you want to open a ticket? Please confirm below.", components: components, ct: ct);
+                    if (!confirmMessage.IsSuccess)
+                    {
+                        return Result.FromError(confirmMessage.Error);
+                    }
+
+                    InteractionHandler.CurrentUserId = gatewayEvent.Author.ID;
+                    while (InteractionHandler.Confirmed == null)
+                    {
+                        
+                    }
+
+                    if (InteractionHandler.Confirmed == false)
+                    {
+                        return Result.FromSuccess();
+                    }
+
+                    InteractionHandler.Confirmed = null;
+                }
+                
                 var welcomeMessageResult = await _channelApi.CreateMessageAsync(gatewayEvent.ChannelID, ModmailConfig.NewTicketCreationMessage, ct: ct);
                 if (!welcomeMessageResult.IsSuccess)
                 {

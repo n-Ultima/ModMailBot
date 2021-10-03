@@ -19,6 +19,7 @@ namespace Modmail.Common
         private ulong _InboxServerId = default!;
         private ulong _ModmailCategoryId = default!;
         private ulong _LogChannelId = default!;
+        private bool? _ConfirmThreadCreation = false!;
         
         public ModmailConfiguration()
         {
@@ -43,6 +44,7 @@ namespace Modmail.Common
             InboxServerId = config.GetValue<ulong>(nameof(InboxServerId));
             ModmailCategoryId = config.GetValue<ulong>(nameof(ModmailCategoryId));
             LogChannelId = config.GetValue<ulong>(nameof(LogChannelId));
+            ConfirmThreadCreation = config.GetValue<bool>(nameof(ConfirmThreadCreation));
         }
         public string Token
         {
@@ -85,6 +87,12 @@ namespace Modmail.Common
             set => _AllowMove = value;
         }
 
+        public bool ConfirmThreadCreation
+        {
+            get => _ConfirmThreadCreation.Value;
+            set => _ConfirmThreadCreation = value;
+        }
+        
         public ulong AdminRoleId
         {
             get => _AdminRoleId;

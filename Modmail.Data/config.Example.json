@@ -7,6 +7,7 @@
     533776358980059137
   ],
   "AllowMove": false,
+  "ConfirmThreadCreation": true,
   "ReplyToTicketsWithoutCommand": false,
   "NewTicketCreationMessage": "",
   "MainServerId": ,
