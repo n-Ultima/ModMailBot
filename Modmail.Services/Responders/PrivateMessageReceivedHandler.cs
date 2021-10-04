@@ -39,11 +39,6 @@ namespace Modmail.Services.Responders
             _guildApi = guildApi;
         }
 
-        private async Task HandleTimerAsync()
-        {
-            
-        }
-        
         public async Task<Result> RespondAsync(IMessageCreate gatewayEvent, CancellationToken ct = new())
         {
             // Only listen to DM's
@@ -138,7 +133,6 @@ namespace Modmail.Services.Responders
                 await _channelApi.CreateMessageAsync(createdModmailChannel.Entity.ID, embeds: new[] {newTicketEmbed, embed}, ct: ct);
                 await _modmailTicketService.CreateModmailTicketAsync(id, gatewayEvent.ChannelID, createdModmailChannel.Entity.ID, gatewayEvent.Author.ID);
                 await _modmailTicketService.AddMessageToModmailTicketAsync(id, gatewayEvent.ID, gatewayEvent.Author.ID, $"{gatewayEvent.Content}");
-                returnSuccessResult:
                 return Result.FromSuccess();
             }
 
