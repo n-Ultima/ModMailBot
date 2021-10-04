@@ -4,8 +4,10 @@ using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Humanizer;
 using Modmail.Common;
+using Polly.CircuitBreaker;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
@@ -36,6 +38,12 @@ namespace Modmail.Services.Responders
             _modmailTicketService = modmailTicketService;
             _guildApi = guildApi;
         }
+
+        private async Task HandleTimerAsync()
+        {
+            
+        }
+        
         public async Task<Result> RespondAsync(IMessageCreate gatewayEvent, CancellationToken ct = new())
         {
             // Only listen to DM's
@@ -71,7 +79,7 @@ namespace Modmail.Services.Responders
                         new ButtonComponent(ButtonComponentStyle.Danger, "Cancel", CustomID: "Cancel")
                     }));
                     // Assume we have to confirm the creation
-                    var confirmMessage = await _channelApi.CreateMessageAsync(gatewayEvent.ChannelID, "Are you sure you want to open a ticket? Please confirm below.", components: components, ct: ct);
+                    var confirmMessage = await _channelApi.CreateMessageAsync(gatewayEvent.ChannelID, "Are you sure you want to open a ticket? Please confirm below within 30 seconds.", components: components, ct: ct);
                     if (!confirmMessage.IsSuccess)
                     {
                         return Result.FromError(confirmMessage.Error);
@@ -80,7 +88,11 @@ namespace Modmail.Services.Responders
                     InteractionHandler.CurrentUserId = gatewayEvent.Author.ID;
                     while (InteractionHandler.Confirmed == null)
                     {
-                        
+                        await Task.Delay(30000);
+                        var edit = await _channelApi.EditMessageAsync(confirmMessage.Entity.ChannelID, confirmMessage.Entity.ID, "Timed out", components: Array.Empty<IMessageComponent>(), ct: ct);
+                        return edit.IsSuccess
+                            ? Result.FromSuccess()
+                            : Result.FromError(edit.Error);
                     }
 
                     if (InteractionHandler.Confirmed == false)
@@ -126,6 +138,7 @@ namespace Modmail.Services.Responders
                 await _channelApi.CreateMessageAsync(createdModmailChannel.Entity.ID, embeds: new[] {newTicketEmbed, embed}, ct: ct);
                 await _modmailTicketService.CreateModmailTicketAsync(id, gatewayEvent.ChannelID, createdModmailChannel.Entity.ID, gatewayEvent.Author.ID);
                 await _modmailTicketService.AddMessageToModmailTicketAsync(id, gatewayEvent.ID, gatewayEvent.Author.ID, $"{gatewayEvent.Content}");
+                returnSuccessResult:
                 return Result.FromSuccess();
             }
 
