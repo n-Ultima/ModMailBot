@@ -25,6 +25,7 @@ namespace ModmailBot
 {
     internal sealed class Program
     {
+        public static ModmailConfiguration ModmailConfig = new();
         static async Task Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
@@ -72,6 +73,7 @@ namespace ModmailBot
                 .UseConsoleLifetime();
             using (var host = hostBuilder.Build())
             {
+                Log.Logger.Information(ModmailConfig.ConfirmThreadCreation.ToString());
                 await host.RunAsync();
             }
         }

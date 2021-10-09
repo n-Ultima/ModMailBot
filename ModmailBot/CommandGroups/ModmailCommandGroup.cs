@@ -278,7 +278,7 @@ namespace ModmailBot.CommandGroups
             return success.IsSuccess
                 ? Result.FromSuccess()
                 : Result.FromError(success.Error);
-        } 
+        }
         public async Task<bool> TryAuthenticateUser(IGuildMember member, IGuild guild, IRole everyoneRole, PermissionLevel permissionLevel)
         {
             if (member == null)
