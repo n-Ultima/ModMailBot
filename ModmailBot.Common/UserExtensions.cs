@@ -8,7 +8,7 @@ namespace ModmailBot.Common
 {
     public static class UserExtensions
     {
-        public static string Tag(this IUser user) => user.Username + "#" + user.Discriminator;
+        public static string Tag(this IUser user) => user.Username + "#" + user.Discriminator.ToString("0000");
         
         public static string GetDefiniteAvatarUrl(this IUser user)
         {
