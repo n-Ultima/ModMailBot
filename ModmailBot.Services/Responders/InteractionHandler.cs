@@ -18,7 +18,7 @@ namespace ModmailBot.Services.Responders
         private readonly IDiscordRestChannelAPI _channelApi;
         
         public static Snowflake CurrentUserId { get; set; }
-        public static bool? Confirmed { get; set; } = null;
+        public static bool? Confirmed { get; set; }
         
         public InteractionHandler(IDiscordRestInteractionAPI interactionApi, IDiscordRestChannelAPI channelApi)
         {

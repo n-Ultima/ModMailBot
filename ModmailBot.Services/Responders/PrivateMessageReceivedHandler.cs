@@ -83,11 +83,25 @@ namespace ModmailBot.Services.Responders
                     InteractionHandler.CurrentUserId = gatewayEvent.Author.ID;
                     while (InteractionHandler.Confirmed == null)
                     {
-                        await Task.Delay(30000);
+                        for (int i = 0; i < 30; i++)
+                        {
+                            if (InteractionHandler.Confirmed != null)
+                            {
+                                break;
+                            }
+
+                            await Task.Delay(1000);
+                        }
+
+                        if (InteractionHandler.Confirmed != null)
+                        {
+                            break;
+                        }
                         var edit = await _channelApi.EditMessageAsync(confirmMessage.Entity.ChannelID, confirmMessage.Entity.ID, "Timed out", components: Array.Empty<IMessageComponent>(), ct: ct);
-                        return edit.IsSuccess
-                            ? Result.FromSuccess()
-                            : Result.FromError(edit.Error);
+                        if (!edit.IsSuccess)
+                        {
+                            return Result.FromError(edit.Error);
+                        }
                     }
 
                     if (InteractionHandler.Confirmed == false)
