@@ -118,7 +118,8 @@ namespace ModmailBot.Services.Responders
                     return Result.FromError(welcomeMessageResult.Error);
                 }
 
-                var createdModmailChannel = await _guildApi.CreateGuildChannelAsync(inboxGuild.Entity.ID, gatewayEvent.Author.Tag(), ChannelType.GuildText, gatewayEvent.Author.ID.ToString(), parentID: new Snowflake(ModmailConfig.ModmailCategoryId), ct: ct);
+                string channelName = gatewayEvent.Author.Username + "-" + gatewayEvent.Author.Discriminator.ToString("0000");
+                var createdModmailChannel = await _guildApi.CreateGuildChannelAsync(inboxGuild.Entity.ID, channelName, ChannelType.GuildText, gatewayEvent.Author.ID.ToString(), parentID: new Snowflake(ModmailConfig.ModmailCategoryId), ct: ct);
                 var embed = new Embed
                 {
                     Author = gatewayEvent.Author.WithUserAsAuthor(),
