@@ -17,13 +17,14 @@ namespace ModmailBot.Services.Responders
         private readonly ModmailTicketService _modmailTicketService;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly IDiscordRestChannelAPI _channelApi;
-
+        private readonly IDiscordRestUserAPI _userApi;
         private ModmailConfiguration ModmailConfig = new();
-        public GuildMemberLeftResponder(ModmailTicketService modmailTicketService, IDiscordRestGuildAPI guildApi, IDiscordRestChannelAPI channelApi)
+        public GuildMemberLeftResponder(ModmailTicketService modmailTicketService, IDiscordRestGuildAPI guildApi, IDiscordRestChannelAPI channelApi, IDiscordRestUserAPI userApi)
         {
             _modmailTicketService = modmailTicketService;
             _guildApi = guildApi;
             _channelApi = channelApi;
+            _userApi = userApi;
         }
         
         public async Task<Result> RespondAsync(IGuildMemberRemove gatewayEvent, CancellationToken ct = new CancellationToken())
@@ -38,8 +39,8 @@ namespace ModmailBot.Services.Responders
             var messages = await _modmailTicketService.FetchModmailMessagesAsync(modmailTicket.Id);
             foreach (var message in messages)
             {
-                var user = await _guildApi.GetGuildMemberAsync(new Snowflake(ModmailConfig.MainServerId), message.AuthorId);
-                stringBuilder.AppendLine($"{user.Entity.User.Value.Tag()} - {message.Content}");
+                var user = await _userApi.GetUserAsync(message.AuthorId);
+                stringBuilder.AppendLine($"{user.Entity.Tag()} - {message.Content}");
             }
 
             var memoryStream = new MemoryStream();

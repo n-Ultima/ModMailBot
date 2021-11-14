@@ -33,14 +33,16 @@ namespace ModmailBot.CommandGroups
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly ModmailTicketService _modmailTicketService;
         private readonly IDiscordRestGuildAPI _guildApi;
+        private readonly IDiscordRestUserAPI _userApi;
         private readonly MessageContext _messageContext;
 
-        public ModmailCommandGroup(IDiscordRestChannelAPI channelApi, ModmailTicketService modmailTicketService, IDiscordRestGuildAPI guildApi, MessageContext messageContext)
+        public ModmailCommandGroup(IDiscordRestChannelAPI channelApi, ModmailTicketService modmailTicketService, IDiscordRestGuildAPI guildApi, IDiscordRestUserAPI userApi, MessageContext messageContext)
         {
             _channelApi = channelApi;
             _modmailTicketService = modmailTicketService;
             _guildApi = guildApi;
             _messageContext = messageContext;
+            _userApi = userApi;
         }
         public ModmailConfiguration ModmailConfig = new();
 
@@ -148,8 +150,8 @@ namespace ModmailBot.CommandGroups
             var messages = await _modmailTicketService.FetchModmailMessagesAsync(modmailTicket.Id);
             foreach (var message in messages)
             {
-                var user = await _guildApi.GetGuildMemberAsync(new Snowflake(ModmailConfig.MainServerId), message.AuthorId);
-                stringBuilder.AppendLine($"{user.Entity.User.Value.Tag()} - {message.Content}");
+                var user = await _userApi.GetUserAsync(message.AuthorId);
+                stringBuilder.AppendLine($"{user.Entity.Tag()} - {message.Content}");
             }
 
             var memoryStream = new MemoryStream();
