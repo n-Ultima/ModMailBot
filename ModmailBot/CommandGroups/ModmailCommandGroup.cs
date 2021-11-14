@@ -166,7 +166,11 @@ namespace ModmailBot.CommandGroups
                 Timestamp = DateTimeOffset.UtcNow,
                 Footer = new EmbedFooter("Replying will create a new thread.", IconUrl: guild.Entity.GetAbsoluteIconUrl() ?? null)
             };
-            await _channelApi.CreateMessageAsync(modmailTicket.DmChannelId, embeds: new[] {closedTicketEmbed}, ct: CancellationToken);
+            var guildMember = await _guildApi.GetGuildMemberAsync(_messageContext.GuildID.Value, modmailTicket.UserId);
+            if (guildMember.IsDefined())
+            {
+                await _channelApi.CreateMessageAsync(modmailTicket.DmChannelId, embeds: new[] {closedTicketEmbed}, ct: CancellationToken);
+            }
             await _channelApi.DeleteChannelAsync(modmailTicket.ModmailThreadChannelId, $"Ticket closed by {executor.Entity.User.Value.Tag()}", CancellationToken);
             await _modmailTicketService.DeleteModmailTicketAsync(modmailTicket);
             return Result.FromSuccess();
