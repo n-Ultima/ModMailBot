@@ -73,6 +73,12 @@ namespace ModmailBot
                 .UseConsoleLifetime();
             using (var host = hostBuilder.Build())
             {
+                using (var db = host.Services.CreateScope().ServiceProvider.GetRequiredService<ModmailContext>())
+                {
+                    Log.Logger.Information("Migrating...");
+                    await db.Database.MigrateAsync();
+                    Log.Logger.Information("Migrated!");
+                }
                 Log.Logger.Information(ModmailConfig.ConfirmThreadCreation.ToString());
                 await host.RunAsync();
             }
